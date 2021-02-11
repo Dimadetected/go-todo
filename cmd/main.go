@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Dimadetected/todo-app"
 	"github.com/Dimadetected/todo-app/pkg/handler"
 	"github.com/Dimadetected/todo-app/pkg/repository"
@@ -10,15 +9,10 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"net/http"
 	"os"
 )
 
 func main() {
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Fprint(writer, "Привет Интернет")
-	})
-
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	if err := initConfig(); err != nil {
 		logrus.Fatalf("error initializing configs: %s", err.Error())
