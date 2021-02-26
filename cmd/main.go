@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/Dimadetected/todo-app"
 	"github.com/Dimadetected/todo-app/pkg/handler"
 	"github.com/Dimadetected/todo-app/pkg/repository"
@@ -10,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -30,7 +33,6 @@ func main() {
 		DBName:   viper.GetString("db.dbname"),
 		SSLMode:  viper.GetString("db.sslmode"),
 	})
-
 	if err != nil {
 		logrus.Fatalf("failed to init db: %s", err.Error())
 	}
@@ -40,8 +42,25 @@ func main() {
 	handlers := handler.NewHandler(services)
 
 	srv := new(todo.Server)
-	if err := srv.Run("8000", handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error occuered while running http server: %s", err.Error())
+
+	go func() {
+		if err := srv.Run("8000", handlers.InitRoutes()); err != nil {
+			logrus.Fatalf("error occuered while running http server: %s", err.Error())
+		}
+	}()
+	logrus.Print("TodoApp start")
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	logrus.Print("TodoApp End")
+	if err = srv.Shutdown(context.Background()); err != nil {
+		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	}
+
+	if err = db.Close(); err != nil {
+		logrus.Errorf("error occured on db connection close: %s", err.Error())
 	}
 }
 
